@@ -498,7 +498,7 @@ def handle_video_analysis(api_key, model_key, system_prompt, criteria_sections,
                             st.error("❌ 動画のダウンロードに失敗しました")
                     except Exception as e:
                         st.error(f"❌ エラー: {str(e)}")
-                        st.info("💡 yt-dlpがインストールされていない可能性があります")
+                        st.info("💡 yt-dlpのインストールに失敗している可能性があります。管理者に連絡してください。")
             else:
                 st.warning("⚠️ 有効なYouTube URLを入力してください")
     
