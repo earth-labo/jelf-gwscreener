@@ -4,7 +4,6 @@ openai>=1.0.0
 Pillow>=10.0.0
 opencv-python-headless>=4.8.0
 moviepy>=1.0.3
-yt-dlp>=2023.10.13
 PyPDF2>=3.0.0
 pdfplumber>=0.10.0
 pdf2image>=1.16.3
@@ -18,4 +17,3 @@ pandas>=2.0.0
 reportlab>=4.0.0
 numpy>=1.24.0
 pytesseract>=0.3.10
-youtube-transcript-api
