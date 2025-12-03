@@ -122,12 +122,12 @@ def generate_pdf_report(results: Dict[str, Any]) -> bytes:
     risk_color = risk_color_map.get(risk_level, colors.grey)
     
     summary_data = [
-        ["項目", "内容"],
-        ["総合評価", risk_level],
-        ["スコア", f"{score}/100"],
-        ["適用指令", results.get('directives', '不明')],
-        ["診断バージョン", results.get('version', '不明')],
-        ["違反項目数", f"{len(results.get('violations', []))}件"]
+        [Paragraph("項目", normal_style), Paragraph("内容", normal_style)],
+        [Paragraph("総合評価", normal_style), Paragraph(risk_level, normal_style)],
+        [Paragraph("スコア", normal_style), Paragraph(f"{score}/100", normal_style)],
+        [Paragraph("適用指令", normal_style), Paragraph(results.get('directives', '不明'), normal_style)],
+        [Paragraph("診断バージョン", normal_style), Paragraph(results.get('version', '不明'), normal_style)],
+        [Paragraph("違反項目数", normal_style), Paragraph(f"{len(results.get('violations', []))}件", normal_style)]
     ]
     
     summary_table = Table(summary_data, colWidths=[6*cm, 10*cm])
@@ -135,10 +135,12 @@ def generate_pdf_report(results: Dict[str, Any]) -> bytes:
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2E7D32')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('FONTNAME', (0, 0), (-1, -1), japanese_font),
         ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('FONTSIZE', (0, 1), (-1, -1), 11),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 1), (-1, -1), 8),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('BACKGROUND', (1, 1), (1, 1), risk_color),
@@ -173,12 +175,12 @@ def generate_pdf_report(results: Dict[str, Any]) -> bytes:
             story.append(Paragraph(f"<b>{v_title}</b>", normal_style))
             story.append(Spacer(1, 0.3*cm))
             
-            # 詳細テーブル
+            # 詳細テーブル（Paragraphでラップして折り返し対応）
             v_data = [
-                ["リスクレベル", violation.get('risk_level', 'Unknown')],
-                ["減点", f"{violation.get('points_deducted', 0)}点"],
-                ["問題内容", violation.get('description', '')[:200]],
-                ["該当表現", violation.get('evidence', '')[:200]]
+                [Paragraph("リスクレベル", normal_style), Paragraph(violation.get('risk_level', 'Unknown'), normal_style)],
+                [Paragraph("減点", normal_style), Paragraph(f"{violation.get('points_deducted', 0)}点", normal_style)],
+                [Paragraph("問題内容", normal_style), Paragraph(violation.get('description', ''), normal_style)],
+                [Paragraph("該当表現", normal_style), Paragraph(violation.get('evidence', ''), normal_style)]
             ]
             
             v_table = Table(v_data, colWidths=[4*cm, 12*cm])
@@ -188,6 +190,8 @@ def generate_pdf_report(results: Dict[str, Any]) -> bytes:
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('FONTNAME', (0, 0), (-1, -1), japanese_font),
                 ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
             ]))
             
