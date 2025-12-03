@@ -25,7 +25,7 @@ class AIHandler:
         elif self.model_type == 'openai':
             import openai
             self.client = openai.OpenAI(api_key=api_key)
-            self.model_name = "gpt-4o"
+            self.model_name = "gpt-4o-mini"
         else:
             raise ValueError(f"Unsupported model type: {model_type}")
     
