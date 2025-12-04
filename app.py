@@ -688,27 +688,27 @@ def display_result(result, spreadsheet_id, worksheet_name):
     with col4:
         # Googleスプレッドシートに出力
         if spreadsheet_id and worksheet_name:
-            if st.button("📊 Sheet", use_container_width=True, key=f"sheet_{id(result)}"):
-                with st.spinner("スプレッドシートに出力中..."):
-                    try:
-                        credentials = load_credentials_from_streamlit_secrets(st)
-                        if credentials:
+            if st.button("📊 Sheet", use_container_width=True, key=f"sheet_btn_{id(result)}"):
+                try:
+                    credentials = load_credentials_from_streamlit_secrets(st)
+                    if not credentials:
+                        st.error("❌ Google Cloud認証情報が設定されていません")
+                        st.info("💡 Streamlit Secrets に gcp_service_account を設定してください")
+                    else:
+                        with st.spinner("📤 スプレッドシートに出力中..."):
                             exporter = SheetsExporter(credentials)
                             success = exporter.export_results(spreadsheet_id, worksheet_name, result)
                             if success:
-                                st.success("✅ スプレッドシートに出力しました")
-                                st.balloons()
+                                st.success("✅ スプレッドシートに出力しました！")
+                                # 結果を保持したまま成功メッセージを表示
+                                st.session_state.current_result = result
                             else:
                                 st.error("❌ 出力に失敗しました")
-                        else:
-                            st.error("❌ Google Cloud認証情報が設定されていません")
-                            st.info("💡 Streamlit Secrets に gcp_service_account を設定してください")
-                    except Exception as e:
-                        st.error(f"❌ エラー: {str(e)}")
-                        # デバッグ情報
-                        import traceback
-                        with st.expander("🔍 詳細エラー情報"):
-                            st.code(traceback.format_exc())
+                except Exception as e:
+                    st.error(f"❌ エラー: {str(e)}")
+                    import traceback
+                    with st.expander("🔍 詳細エラー情報（デバッグ用）"):
+                        st.code(traceback.format_exc())
         else:
             st.info("📊 設定必要")
     
