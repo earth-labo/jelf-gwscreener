@@ -158,12 +158,17 @@ def main():
             "バージョン",
             options=list(version_options.keys()),
             format_func=lambda x: version_options[x],
-            index=2,  # デフォルトはv3
-            help="v3推奨: 気候関連に特化"
+            index=0,  # デフォルトはv1
+            help="v1推奨: すべての基準を網羅"
         )
         
         version_info = VERSIONS[selected_version]
         st.caption(version_info["description"])
+        
+        st.markdown("---")
+        
+        # スプレッドシート保存の説明
+        st.info("📊 解析結果は自動的にGoogleスプレッドシートに保存され、プロジェクトチームに共有されます。")
         
         st.markdown("---")
         
@@ -195,12 +200,12 @@ def main():
         st.markdown("### 🗑️ リセット")
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("結果をクリア", use_container_width=True):
+            if st.button("結果クリア", use_container_width=True):
                 st.session_state.current_result = None
                 st.success("✅ 結果をクリアしました")
                 st.rerun()
         with col2:
-            if st.button("履歴をクリア", use_container_width=True):
+            if st.button("履歴クリア", use_container_width=True):
                 st.session_state.diagnosis_history = []
                 st.success("✅ 履歴をクリアしました")
                 st.rerun()
@@ -361,6 +366,16 @@ def handle_image_analysis(api_key, model_key, system_prompt, criteria_sections,
                 st.markdown(f"- フォーマット: {image_info['format']}")
                 st.markdown(f"- ファイルサイズ: {image_info['size_kb']:.1f} KB")
         
+        # メモ欄を追加
+        st.markdown("---")
+        image_memo = st.text_area(
+            "📝 メモ（任意）",
+            placeholder="例: ○○社のWebサイト画像、△△キャンペーンのバナー広告、××製品パッケージの写真など",
+            help="この画像の出所や内容について簡単なメモを残せます。解析結果と一緒に記録されます。",
+            height=80,
+            key="image_memo"
+        )
+        
         col1, col2 = st.columns([1, 4])
         with col1:
             diagnose_btn = st.button("🔍 解析開始", type="primary", use_container_width=True, key="diagnose_image")
@@ -387,7 +402,11 @@ def handle_image_analysis(api_key, model_key, system_prompt, criteria_sections,
                     result['content_type'] = '画像'
                     result['version'] = version
                     result['directives'] = directive_label
-                    result['content_sample'] = f"画像ファイル: {uploaded_file.name}"
+                    # メモがあればファイル名と一緒に記録
+                    content_sample = f"画像ファイル: {uploaded_file.name}"
+                    if image_memo:
+                        content_sample += f" | メモ: {image_memo}"
+                    result['content_sample'] = content_sample
                     
                     st.session_state.current_result = result
                     st.session_state.diagnosis_history.append({
@@ -429,6 +448,16 @@ def handle_pdf_analysis(api_key, model_key, system_prompt, criteria_sections,
             st.markdown(f"- ページ数: {pdf_info['page_count']}")
             st.markdown(f"- ファイルサイズ: {pdf_info['size_kb']:.1f} KB")
         
+        # メモ欄を追加
+        st.markdown("---")
+        pdf_memo = st.text_area(
+            "📝 メモ（任意）",
+            placeholder="例: ○○社の統合報告書、△△プロジェクトの提案書、××製品のカタログなど",
+            help="このPDFの出所や内容について簡単なメモを残せます。解析結果と一緒に記録されます。",
+            height=80,
+            key="pdf_memo"
+        )
+        
         col1, col2 = st.columns([1, 4])
         with col1:
             diagnose_btn = st.button("🔍 解析開始", type="primary", use_container_width=True, key="diagnose_pdf")
@@ -454,7 +483,11 @@ def handle_pdf_analysis(api_key, model_key, system_prompt, criteria_sections,
                     result['content_type'] = 'PDF'
                     result['version'] = version
                     result['directives'] = directive_label
-                    result['content_sample'] = f"PDFファイル: {uploaded_file.name}"
+                    # メモがあればファイル名と一緒に記録
+                    content_sample = f"PDFファイル: {uploaded_file.name}"
+                    if pdf_memo:
+                        content_sample += f" | メモ: {pdf_memo}"
+                    result['content_sample'] = content_sample
                     
                     st.session_state.current_result = result
                     st.session_state.diagnosis_history.append({
@@ -503,6 +536,16 @@ def handle_video_analysis(api_key, model_key, system_prompt, criteria_sections,
             if video_info['duration_seconds'] > 60:
                 st.warning("⚠️ 動画が60秒を超えています。最初の60秒のみ分析されます。")
         
+        # メモ欄を追加
+        st.markdown("---")
+        video_memo = st.text_area(
+            "📝 メモ（任意）",
+            placeholder="例: ○○社のTVCM、△△キャンペーンのWeb動画、××イベントのプロモーション映像など",
+            help="この動画の出所や内容について簡単なメモを残せます。解析結果と一緒に記録されます。",
+            height=80,
+            key="video_memo"
+        )
+        
         col1, col2 = st.columns([1, 4])
         with col1:
             diagnose_btn = st.button("🔍 解析開始", type="primary", use_container_width=True, key="diagnose_video")
@@ -525,7 +568,11 @@ def handle_video_analysis(api_key, model_key, system_prompt, criteria_sections,
                     result['content_type'] = '動画'
                     result['version'] = version
                     result['directives'] = directive_label
-                    result['content_sample'] = f"動画ファイル: {uploaded_file.name}"
+                    # メモがあればファイル名と一緒に記録
+                    content_sample = f"動画ファイル: {uploaded_file.name}"
+                    if video_memo:
+                        content_sample += f" | メモ: {video_memo}"
+                    result['content_sample'] = content_sample
                     
                     st.session_state.current_result = result
                     st.session_state.diagnosis_history.append({
