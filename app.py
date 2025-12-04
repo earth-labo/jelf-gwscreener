@@ -652,7 +652,8 @@ def display_result(result, spreadsheet_id, worksheet_name):
                 data=pdf_data,
                 file_name=f"climatewash_report_{datetime.now():%Y%m%d_%H%M%S}.pdf",
                 mime="application/pdf",
-                use_container_width=True
+                use_container_width=True,
+                key=f"pdf_{id(result)}"  # ユニークキー
             )
         except Exception as e:
             st.error(f"PDFエラー: {str(e)}")
@@ -666,7 +667,8 @@ def display_result(result, spreadsheet_id, worksheet_name):
                 data=word_data,
                 file_name=f"climatewash_report_{datetime.now():%Y%m%d_%H%M%S}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True
+                use_container_width=True,
+                key=f"word_{id(result)}"  # ユニークキー
             )
         except Exception as e:
             st.error(f"Wordエラー: {str(e)}")
@@ -679,32 +681,40 @@ def display_result(result, spreadsheet_id, worksheet_name):
             data=result_json,
             file_name=f"climatewash_result_{datetime.now():%Y%m%d_%H%M%S}.json",
             mime="application/json",
-            use_container_width=True
+            use_container_width=True,
+            key=f"json_{id(result)}"  # ユニークキー
         )
     
     with col4:
         # Googleスプレッドシートに出力
         if spreadsheet_id and worksheet_name:
-            if st.button("📊 Sheet", use_container_width=True):
-                try:
-                    credentials = load_credentials_from_streamlit_secrets(st)
-                    if credentials:
-                        exporter = SheetsExporter(credentials)
-                        success = exporter.export_results(spreadsheet_id, worksheet_name, result)
-                        if success:
-                            st.success("✅ スプレッドシートに出力しました")
+            if st.button("📊 Sheet", use_container_width=True, key=f"sheet_{id(result)}"):
+                with st.spinner("スプレッドシートに出力中..."):
+                    try:
+                        credentials = load_credentials_from_streamlit_secrets(st)
+                        if credentials:
+                            exporter = SheetsExporter(credentials)
+                            success = exporter.export_results(spreadsheet_id, worksheet_name, result)
+                            if success:
+                                st.success("✅ スプレッドシートに出力しました")
+                                st.balloons()
+                            else:
+                                st.error("❌ 出力に失敗しました")
                         else:
-                            st.error("❌ 出力に失敗しました")
-                    else:
-                        st.error("❌ Google Cloud認証情報が設定されていません")
-                except Exception as e:
-                    st.error(f"❌ エラー: {str(e)}")
+                            st.error("❌ Google Cloud認証情報が設定されていません")
+                            st.info("💡 Streamlit Secrets に gcp_service_account を設定してください")
+                    except Exception as e:
+                        st.error(f"❌ エラー: {str(e)}")
+                        # デバッグ情報
+                        import traceback
+                        with st.expander("🔍 詳細エラー情報"):
+                            st.code(traceback.format_exc())
         else:
             st.info("📊 設定必要")
     
     # HOMEボタン
     st.markdown("---")
-    if st.button("🏠 ホームに戻る", type="primary", use_container_width=False):
+    if st.button("🏠 ホームに戻る", type="primary", use_container_width=False, key=f"home_{id(result)}"):
         st.session_state.current_result = None
         st.rerun()
 
