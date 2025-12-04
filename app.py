@@ -75,16 +75,13 @@ def main():
     with st.sidebar:
         st.markdown("<br>", unsafe_allow_html=True)  # ボタンの上にスペース
         
-        # ホームに戻るボタン（ブラウザリロード）
+        # ホームに戻るボタン（リロード機能）
         if st.button("🏠 ホームに戻る", type="primary", use_container_width=True, key="home_sidebar"):
-            st.markdown(
-                """
-                <script>
-                    window.parent.location.reload();
-                </script>
-                """,
-                unsafe_allow_html=True
-            )
+            # すべての状態をクリア
+            st.session_state.current_result = None
+            st.session_state.show_examples = False
+            st.session_state.show_history = False
+            st.rerun()
         
         st.markdown("---")
         
