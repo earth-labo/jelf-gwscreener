@@ -64,8 +64,8 @@ def main():
     # ヘッダー
     st.markdown("""
     <div style='text-align: center; padding: 20px; background: linear-gradient(90deg, #2E7D32 0%, #43A047 100%); border-radius: 10px;'>
-        <h1 style='color: white; margin: 0;'>🌍 ClimateWash解析ツール</h1>
-        <p style='color: white; margin: 10px 0 0 0;'>EU指令準拠 AI自動解析システム</p>
+        <h1 style='color: white; margin: 0;'>🌎 ClimateWash解析ツール🌏</h1>
+        <p style='color: white; margin: 10px 0 0 0;'>EU指令の観点に基づくAIスクリーニングシステム</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -221,6 +221,19 @@ def main():
                 st.session_state.diagnosis_history = []
                 st.success("✅ 履歴をクリアしました")
                 st.rerun()
+        
+        # サイン（一番下）
+        st.markdown("---")
+        st.markdown(
+            """
+            <div style='text-align: center; color: #666; font-size: 0.85em; padding: 10px 0;'>
+                <div style='margin-bottom: 5px;'>💼 Developed by</div>
+                <div style='font-weight: 600;'>JELF ClimateWash</div>
+                <div style='font-weight: 600;'>Report Project Team</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     
     # 例文ライブラリの表示
     if st.session_state.get('show_examples', False):
@@ -302,6 +315,17 @@ def handle_text_analysis(api_key, model_key, system_prompt, criteria_sections,
             else:
                 st.success("✅ 明らかな問題は検出されませんでした（詳細分析を推奨）")
     
+    st.markdown("---")
+    
+    # 必須メモ欄
+    text_memo = st.text_area(
+        "📝 企業名と、わかれば出所を記入してください。（必須）*",
+        placeholder="記入例：●●製菓、ブランドメッセージ／●●株式会社、ラジオCM（××放送）",
+        help="このテキストの企業名と出所（Webサイト、資料名など）を入力してください。",
+        height=80,
+        key="text_memo"
+    )
+    
     col1, col2 = st.columns([1, 4])
     with col1:
         diagnose_btn = st.button("🔍 解析開始", type="primary", use_container_width=True)
@@ -312,6 +336,11 @@ def handle_text_analysis(api_key, model_key, system_prompt, criteria_sections,
     if diagnose_btn:
         if not api_key:
             st.error("❌ APIキーを入力してください")
+            return
+        
+        # メモが空の場合はエラー
+        if not text_memo or len(text_memo.strip()) < 5:
+            st.error("❌ 企業名と出所を入力してください。（5文字以上）")
             return
         
         if not text_input or len(text_input) < 10:
@@ -329,7 +358,8 @@ def handle_text_analysis(api_key, model_key, system_prompt, criteria_sections,
                 result['content_type'] = 'テキスト'
                 result['version'] = version
                 result['directives'] = directive_label
-                result['content_sample'] = text_input[:200]
+                # メモとテキストの冒頭を記録
+                result['content_sample'] = f"テキスト: {text_memo} | 内容: {text_input[:100]}..."
                 
                 st.session_state.current_result = result
                 st.session_state.diagnosis_history.append({
@@ -642,6 +672,17 @@ def handle_web_analysis(api_key, model_key, system_prompt, criteria_sections,
                 else:
                     st.error(f"情報取得失敗: {web_info['error']}")
         
+        st.markdown("---")
+        
+        # 必須メモ欄
+        web_memo = st.text_area(
+            "📝 企業名と、わかれば出所を記入してください。（必須）*",
+            placeholder="記入例：●●株式会社、公式WEBサイトの企業理念ページ／●●製薬、プレスリリース",
+            help="このWebサイトの企業名と内容を入力してください。",
+            height=80,
+            key="web_memo"
+        )
+        
         col1, col2 = st.columns([1, 4])
         with col1:
             diagnose_btn = st.button("🔍 解析開始", type="primary", use_container_width=True, key="diagnose_web")
@@ -654,6 +695,11 @@ def handle_web_analysis(api_key, model_key, system_prompt, criteria_sections,
                 st.error("❌ APIキーを入力してください")
                 return
             
+            # メモが空の場合はエラー
+            if not web_memo or len(web_memo.strip()) < 5:
+                st.error("❌ 企業名と出所を入力してください。（5文字以上）")
+                return
+            
             # 解析実行
             with st.spinner("🔄 AI分析中（Webページの処理には時間がかかります）..."):
                 try:
@@ -664,7 +710,8 @@ def handle_web_analysis(api_key, model_key, system_prompt, criteria_sections,
                     result['content_type'] = 'Webサイト'
                     result['version'] = version
                     result['directives'] = directive_label
-                    result['content_sample'] = url_input
+                    # メモとURLを記録
+                    result['content_sample'] = f"Web: {web_memo} | URL: {url_input}"
                     
                     st.session_state.current_result = result
                     st.session_state.diagnosis_history.append({
