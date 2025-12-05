@@ -37,10 +37,10 @@ def generate_word_report(results: Dict[str, Any]) -> bytes:
     content_type = results.get('content_type', '不明')
     doc.add_paragraph(f"コンテンツタイプ: {content_type}")
     
-    # 診断対象コンテンツを追加
+    # 診断対象コンテンツを追加（全文）
     content_sample = results.get('content_sample', '')
     if content_sample:
-        doc.add_paragraph(f"診断対象: {content_sample[:500]}")
+        doc.add_paragraph(f"診断対象: {content_sample}")
     
     doc.add_page_break()
     
