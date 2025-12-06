@@ -131,7 +131,7 @@ def analyze_css_colors(html: str) -> Dict[str, Any]:
         return {"error": str(e)}
 
 def analyze_web_content(ai_handler, url: str, system_prompt: str,
-                       criteria_sections: list) -> Dict[str, Any]:
+                       criteria_sections: list, additional_context: str = "") -> Dict[str, Any]:
     """
     Webサイトを分析
     
@@ -140,6 +140,7 @@ def analyze_web_content(ai_handler, url: str, system_prompt: str,
         url: 分析対象URL
         system_prompt: システムプロンプト
         criteria_sections: 適用する診断基準セクション
+        additional_context: 追加の参考情報（企業情報、補足情報など）
         
     Returns:
         分析結果
@@ -192,6 +193,10 @@ Webサイト: {url}
 - メタデータやAlt属性も考慮
 - ページ全体のトーン・マナーを評価
 """
+    
+    # 追加の参考情報があれば追加
+    if additional_context:
+        user_prompt += f"\n\n【参考情報】\n{additional_context}\n※上記の参考情報も考慮して解析してください。"
     
     result = ai_handler.analyze_text(system_prompt, user_prompt)
     
