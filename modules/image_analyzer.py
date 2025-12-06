@@ -6,7 +6,7 @@ from PIL import Image
 import io
 
 def analyze_image_content(ai_handler, image_data: bytes, system_prompt: str,
-                         criteria_sections: list) -> Dict[str, Any]:
+                         criteria_sections: list, additional_context: str = "") -> Dict[str, Any]:
     """
     画像を分析
     
@@ -15,6 +15,7 @@ def analyze_image_content(ai_handler, image_data: bytes, system_prompt: str,
         image_data: 画像データ（バイト列）
         system_prompt: システムプロンプト
         criteria_sections: 適用する診断基準セクション
+        additional_context: 追加の参考情報（企業情報、補足情報など）
         
     Returns:
         分析結果
@@ -42,6 +43,10 @@ def analyze_image_content(ai_handler, image_data: bytes, system_prompt: str,
 - ミスリーディングなシンボルの使用
 - 製品カテゴリーと画像の乖離（例：化石燃料製品+森林画像）
 """
+    
+    # 追加の参考情報があれば追加
+    if additional_context:
+        user_prompt += f"\n\n【参考情報】\n{additional_context}\n※上記の参考情報も考慮して解析してください。"
     
     return ai_handler.analyze_image(system_prompt, user_prompt, image_data)
 
