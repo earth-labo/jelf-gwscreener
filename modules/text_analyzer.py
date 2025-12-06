@@ -6,7 +6,7 @@ import sys
 import os
 
 def analyze_text_content(ai_handler, text: str, system_prompt: str, 
-                        criteria_sections: list) -> Dict[str, Any]:
+                        criteria_sections: list, additional_context: str = "") -> Dict[str, Any]:
     """
     テキストを分析
     
@@ -15,6 +15,7 @@ def analyze_text_content(ai_handler, text: str, system_prompt: str,
         text: 分析対象テキスト
         system_prompt: システムプロンプト
         criteria_sections: 適用する診断基準セクション
+        additional_context: 追加の参考情報（企業情報、補足情報など）
         
     Returns:
         分析結果
@@ -37,6 +38,10 @@ def analyze_text_content(ai_handler, text: str, system_prompt: str,
 - 単語の出現だけでなく、主張の実証性を評価
 - 日本語の婉曲表現に特に注意
 """
+    
+    # 追加の参考情報があれば追加
+    if additional_context:
+        user_prompt += f"\n\n【参考情報】\n{additional_context}\n※上記の参考情報も考慮して解析してください。"
     
     return ai_handler.analyze_text(system_prompt, user_prompt)
 
