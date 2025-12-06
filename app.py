@@ -65,7 +65,7 @@ def main():
     st.markdown("""
     <div style='text-align: center; padding: 20px; background: linear-gradient(90deg, #2E7D32 0%, #43A047 100%); border-radius: 10px;'>
         <h1 style='color: white; margin: 0;'>🌎環境表示解析ツール🌏</h1>
-        <p style='color: white; margin: 10px 0 0 0;'>>EU指令の観点に基づくグリーンウォッシュスクリーニングシステム</p>
+        <p style='color: white; margin: 10px 0 0 0;'>EU指令の観点に基づくグリーンウォッシュスクリーニングシステム</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -324,6 +324,14 @@ def handle_text_analysis(api_key, model_key, system_prompt, criteria_sections,
         help="このテキストの企業名と出所（Webサイト、資料名など）を入力してください。",
         height=80,
         key="text_memo"
+    )
+    
+    # その他参考情報（任意）
+    text_additional_info = st.text_area(
+        "📋 その他参考情報（任意）",
+        help="解析の参考となる追加情報があれば入力してください。",
+        height=60,
+        key="text_additional_info"
     )
     
     col1, col2 = st.columns([1, 4])
