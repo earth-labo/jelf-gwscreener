@@ -1,5 +1,5 @@
 """
-ClimateWash解析ツール - メインアプリケーション
+環境表示解析ツール - メインアプリケーション
 """
 import streamlit as st
 import sys
