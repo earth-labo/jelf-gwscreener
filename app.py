@@ -25,34 +25,28 @@ from config.criteria import VERSIONS, get_criteria_sections, EXAMPLE_LIBRARY, ge
 def auto_save_to_sheet(result, spreadsheet_id, worksheet_name):
     """
     結果をスプレッドシートに自動保存
+    戻り値: (成功: bool, メッセージ: str, エラー詳細: str or None)
     """
     if not spreadsheet_id or not worksheet_name:
-        st.warning("⚠️ スプレッドシート設定が見つかりません（SPREADSHEET_IDまたはWORKSHEET_NAMEがSecretsに設定されていません）")
-        return False
+        return (False, "スプレッドシート設定が見つかりません", "SPREADSHEET_IDまたはWORKSHEET_NAMEがSecretsに設定されていません")
     
     try:
         credentials = load_credentials_from_streamlit_secrets(st)
         if not credentials:
-            st.error("❌ Google認証情報が設定されていません（gcp_service_accountがSecretsに設定されていません）")
-            return False
+            return (False, "Google認証情報が設定されていません", "gcp_service_accountがSecretsに設定されていません")
             
         exporter = SheetsExporter(credentials)
         success = exporter.export_results(spreadsheet_id, worksheet_name, result)
         
         if success:
-            st.success("✅ スプレッドシートに保存しました")
-            return True
+            return (True, "スプレッドシートに保存しました", None)
         else:
-            st.error("❌ スプレッドシートへの保存に失敗しました")
-            return False
+            return (False, "スプレッドシートへの保存に失敗しました", "export_results returned False")
             
     except Exception as e:
-        st.error(f"❌ スプレッドシート保存エラー: {str(e)}")
-        # デバッグ情報を展開可能な形で表示
-        with st.expander("🔍 詳細エラー情報（デバッグ用）"):
-            import traceback
-            st.code(traceback.format_exc())
-        return False
+        import traceback
+        error_detail = traceback.format_exc()
+        return (False, f"スプレッドシート保存エラー: {str(e)}", error_detail)
 
 # ページ設定
 st.set_page_config(
@@ -400,8 +394,13 @@ def handle_text_analysis(api_key, model_key, system_prompt, criteria_sections,
                     'result': result
                 })
                 
-                # スプレッドシートに自動保存
-                auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                # スプレッドシートに自動保存（結果をsession_stateに保存）
+                save_success, save_message, save_error = auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                st.session_state.save_result = {
+                    'success': save_success,
+                    'message': save_message,
+                    'error': save_error
+                }
                 
                 # ページをリロードして結果を表示
                 st.rerun()
@@ -508,8 +507,13 @@ def handle_image_analysis(api_key, model_key, system_prompt, criteria_sections,
                         'result': result
                     })
                     
-                    # スプレッドシートに自動保存
-                    auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                    # スプレッドシートに自動保存（結果をsession_stateに保存）
+                    save_success, save_message, save_error = auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                    st.session_state.save_result = {
+                        'success': save_success,
+                        'message': save_message,
+                        'error': save_error
+                    }
                     
                     # ページをリロードして結果を表示
                     st.rerun()
@@ -608,8 +612,13 @@ def handle_pdf_analysis(api_key, model_key, system_prompt, criteria_sections,
                         'result': result
                     })
                     
-                    # スプレッドシートに自動保存
-                    auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                    # スプレッドシートに自動保存（結果をsession_stateに保存）
+                    save_success, save_message, save_error = auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                    st.session_state.save_result = {
+                        'success': save_success,
+                        'message': save_message,
+                        'error': save_error
+                    }
                     
                     # ページをリロードして結果を表示
                     st.rerun()
@@ -710,8 +719,13 @@ def handle_video_analysis(api_key, model_key, system_prompt, criteria_sections,
                         'result': result
                     })
                     
-                    # スプレッドシートに自動保存
-                    auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                    # スプレッドシートに自動保存（結果をsession_stateに保存）
+                    save_success, save_message, save_error = auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                    st.session_state.save_result = {
+                        'success': save_success,
+                        'message': save_message,
+                        'error': save_error
+                    }
                     
                     # ページをリロードして結果を表示
                     st.rerun()
@@ -816,8 +830,13 @@ def handle_web_analysis(api_key, model_key, system_prompt, criteria_sections,
                         'result': result
                     })
                     
-                    # スプレッドシートに自動保存
-                    auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                    # スプレッドシートに自動保存（結果をsession_stateに保存）
+                    save_success, save_message, save_error = auto_save_to_sheet(result, spreadsheet_id, worksheet_name)
+                    st.session_state.save_result = {
+                        'success': save_success,
+                        'message': save_message,
+                        'error': save_error
+                    }
                     
                     # ページをリロードして結果を表示
                     st.rerun()
@@ -831,6 +850,19 @@ def display_result(result, spreadsheet_id, worksheet_name):
     """解析結果を表示"""
     st.markdown("---")
     st.markdown("## 📊 解析結果")
+    
+    # スプレッドシート保存結果を表示
+    if 'save_result' in st.session_state:
+        save_result = st.session_state.save_result
+        if save_result['success']:
+            st.success(f"✅ {save_result['message']}")
+        else:
+            st.error(f"❌ {save_result['message']}")
+            if save_result['error']:
+                with st.expander("🔍 詳細エラー情報（デバッグ用）"):
+                    st.code(save_result['error'])
+        # 一度表示したらクリア
+        del st.session_state.save_result
     
     if not result.get('success', False):
         st.error(f"❌ {result.get('error', '不明なエラー')}")
