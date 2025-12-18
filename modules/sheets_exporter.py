@@ -1,7 +1,7 @@
 """
 Googleスプレッドシート出力モジュール
 """
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
@@ -23,6 +23,7 @@ class SheetsExporter:
             credentials_dict, scopes=scopes
         )
         self.client = gspread.authorize(self.creds)
+        self.last_error = None  # 最後のエラーを保存
     
     def export_results(self, spreadsheet_id: str, worksheet_name: str,
                       results: Dict[str, Any]) -> bool:
@@ -38,31 +39,36 @@ class SheetsExporter:
             成功したかどうか
         """
         try:
-            print(f"[DEBUG] スプレッドシート出力開始: {spreadsheet_id}")
-            
             # スプレッドシートを開く
-            sheet = self.client.open_by_key(spreadsheet_id)
-            print(f"[DEBUG] スプレッドシート取得成功: {sheet.title}")
+            try:
+                sheet = self.client.open_by_key(spreadsheet_id)
+            except gspread.exceptions.SpreadsheetNotFound:
+                self.last_error = f"スプレッドシートが見つかりません: ID={spreadsheet_id}"
+                return False
+            except gspread.exceptions.APIError as e:
+                self.last_error = f"Google Sheets API エラー: {str(e)}"
+                return False
             
             # ワークシートを取得（なければ作成）
             try:
                 worksheet = sheet.worksheet(worksheet_name)
-                print(f"[DEBUG] ワークシート取得成功: {worksheet_name}")
             except gspread.exceptions.WorksheetNotFound:
-                print(f"[DEBUG] ワークシート作成中: {worksheet_name}")
-                worksheet = sheet.add_worksheet(
-                    title=worksheet_name, 
-                    rows=1000, 
-                    cols=11  # 11列に修正
-                )
-                # ヘッダー行を追加
-                headers = [
-                    "診断日時", "コンテンツタイプ", "診断対象", "適用指令", "診断バージョン",
-                    "総合評価", "スコア", "違反項目数", "違反詳細", 
-                    "是正提案", "まとめ"
-                ]
-                worksheet.append_row(headers)
-                print(f"[DEBUG] ヘッダー行追加完了")
+                try:
+                    worksheet = sheet.add_worksheet(
+                        title=worksheet_name, 
+                        rows=1000, 
+                        cols=11
+                    )
+                    # ヘッダー行を追加
+                    headers = [
+                        "診断日時", "コンテンツタイプ", "診断対象", "適用指令", "診断バージョン",
+                        "総合評価", "スコア", "違反項目数", "違反詳細", 
+                        "是正提案", "まとめ"
+                    ]
+                    worksheet.append_row(headers)
+                except gspread.exceptions.APIError as e:
+                    self.last_error = f"ワークシート作成エラー: {str(e)}"
+                    return False
             
             # データ行を準備
             row = [
@@ -79,17 +85,37 @@ class SheetsExporter:
                 results.get('summary', '')[:500]  # 500文字まで
             ]
             
-            print(f"[DEBUG] データ行を追加中: {len(row)}列")
             # 行を追加
-            worksheet.append_row(row)
-            print(f"[DEBUG] データ行追加完了")
+            try:
+                worksheet.append_row(row, value_input_option='USER_ENTERED')
+                
+                # 実際に追加されたか確認（最後の行を取得）
+                all_values = worksheet.get_all_values()
+                if len(all_values) > 0:
+                    last_row = all_values[-1]
+                    # 最後の行の最初のセル（日時）が今追加した日時と一致するか確認
+                    if last_row[0] == row[0]:
+                        return True
+                    else:
+                        self.last_error = "データが正しく追加されませんでした（確認失敗）"
+                        return False
+                else:
+                    self.last_error = "データ追加後、シートが空です"
+                    return False
+                    
+            except gspread.exceptions.APIError as e:
+                self.last_error = f"データ追加エラー: {str(e)}"
+                return False
             
-            return True
         except Exception as e:
-            print(f"[ERROR] スプレッドシート出力エラー: {str(e)}")
+            self.last_error = f"予期しないエラー: {str(e)}"
             import traceback
-            traceback.print_exc()
-            raise  # エラーを再度投げる
+            self.last_error += f"\n{traceback.format_exc()}"
+            return False
+    
+    def get_last_error(self) -> str:
+        """最後に発生したエラーを取得"""
+        return self.last_error or "エラー情報なし"
     
     def _format_violations(self, violations: list) -> str:
         """違反項目をフォーマット"""
