@@ -87,20 +87,28 @@ class SheetsExporter:
             
             # 行を追加
             try:
-                worksheet.append_row(row, value_input_option='USER_ENTERED')
-                
-                # 実際に追加されたか確認（最後の行を取得）
+                # 現在の行数を取得
                 all_values = worksheet.get_all_values()
-                if len(all_values) > 0:
-                    last_row = all_values[-1]
-                    # 最後の行の最初のセル（日時）が今追加した日時と一致するか確認
+                next_row = len(all_values) + 1
+                
+                # 明示的に次の行に書き込む
+                for col_idx, value in enumerate(row, start=1):
+                    worksheet.update_cell(next_row, col_idx, value)
+                
+                # 書き込みを確認
+                import time
+                time.sleep(1)  # APIの反映を待つ
+                
+                updated_values = worksheet.get_all_values()
+                if len(updated_values) >= next_row:
+                    last_row = updated_values[next_row - 1]
                     if last_row[0] == row[0]:
                         return True
                     else:
-                        self.last_error = "データが正しく追加されませんでした（確認失敗）"
+                        self.last_error = f"データが正しく追加されませんでした。期待: {row[0]}, 実際: {last_row[0] if last_row else '空'}"
                         return False
                 else:
-                    self.last_error = "データ追加後、シートが空です"
+                    self.last_error = f"データ追加後、行数が不足しています（期待: {next_row}, 実際: {len(updated_values)}）"
                     return False
                     
             except gspread.exceptions.APIError as e:
