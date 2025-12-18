@@ -102,11 +102,32 @@ class SheetsExporter:
                 updated_values = worksheet.get_all_values()
                 if len(updated_values) >= next_row:
                     last_row = updated_values[next_row - 1]
-                    if last_row[0] == row[0]:
-                        return True
+                    
+                    # 日時の確認（フォーマットの違いを許容）
+                    # 少なくとも日付部分と分が一致していればOK
+                    expected_datetime = row[0]  # "2025-12-18 04:18:03"
+                    actual_datetime = last_row[0] if last_row else ""
+                    
+                    # 日付と時分が含まれていればOK（秒とゼロパディングは無視）
+                    expected_parts = expected_datetime.split()  # ["2025-12-18", "04:18:03"]
+                    if len(expected_parts) >= 2:
+                        expected_date = expected_parts[0]
+                        expected_time_parts = expected_parts[1].split(":")  # ["04", "18", "03"]
+                        expected_hour_min = f"{int(expected_time_parts[0])}:{expected_time_parts[1]}"  # "4:18"
+                        
+                        # 実際のデータに日付と時分が含まれているか確認
+                        if expected_date in actual_datetime and expected_hour_min in actual_datetime:
+                            return True
+                        else:
+                            self.last_error = f"データが正しく追加されませんでした。期待: {expected_datetime}, 実際: {actual_datetime}"
+                            return False
                     else:
-                        self.last_error = f"データが正しく追加されませんでした。期待: {row[0]}, 実際: {last_row[0] if last_row else '空'}"
-                        return False
+                        # フォールバック: 最初の10文字（日付部分）が一致すればOK
+                        if actual_datetime.startswith(expected_datetime[:10]):
+                            return True
+                        else:
+                            self.last_error = f"データが正しく追加されませんでした。期待: {expected_datetime}, 実際: {actual_datetime}"
+                            return False
                 else:
                     self.last_error = f"データ追加後、行数が不足しています（期待: {next_row}, 実際: {len(updated_values)}）"
                     return False
