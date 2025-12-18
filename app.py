@@ -27,16 +27,32 @@ def auto_save_to_sheet(result, spreadsheet_id, worksheet_name):
     結果をスプレッドシートに自動保存
     """
     if not spreadsheet_id or not worksheet_name:
+        st.warning("⚠️ スプレッドシート設定が見つかりません（SPREADSHEET_IDまたはWORKSHEET_NAMEがSecretsに設定されていません）")
         return False
     
     try:
         credentials = load_credentials_from_streamlit_secrets(st)
-        if credentials:
-            exporter = SheetsExporter(credentials)
-            return exporter.export_results(spreadsheet_id, worksheet_name, result)
-    except:
-        pass
-    return False
+        if not credentials:
+            st.error("❌ Google認証情報が設定されていません（gcp_service_accountがSecretsに設定されていません）")
+            return False
+            
+        exporter = SheetsExporter(credentials)
+        success = exporter.export_results(spreadsheet_id, worksheet_name, result)
+        
+        if success:
+            st.success("✅ スプレッドシートに保存しました")
+            return True
+        else:
+            st.error("❌ スプレッドシートへの保存に失敗しました")
+            return False
+            
+    except Exception as e:
+        st.error(f"❌ スプレッドシート保存エラー: {str(e)}")
+        # デバッグ情報を展開可能な形で表示
+        with st.expander("🔍 詳細エラー情報（デバッグ用）"):
+            import traceback
+            st.code(traceback.format_exc())
+        return False
 
 # ページ設定
 st.set_page_config(
@@ -884,10 +900,6 @@ def display_result(result, spreadsheet_id, worksheet_name):
             use_container_width=True,
             key=f"json_{id(result)}"
         )
-    
-    # スプレッドシート自動保存通知
-    if spreadsheet_id and worksheet_name:
-        st.success("✅ この結果はスプレッドシートに自動保存されました")
     
     # HOMEボタン
     st.markdown("---")
