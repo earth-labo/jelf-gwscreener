@@ -41,12 +41,14 @@ def auto_save_to_sheet(result, spreadsheet_id, worksheet_name):
         if success:
             return (True, "スプレッドシートに保存しました", None)
         else:
-            return (False, "スプレッドシートへの保存に失敗しました", "export_results returned False")
+            # エクスポーターから詳細エラーを取得
+            error_detail = exporter.get_last_error()
+            return (False, "スプレッドシートへの保存に失敗しました", error_detail)
             
     except Exception as e:
         import traceback
-        error_detail = traceback.format_exc()
-        return (False, f"スプレッドシート保存エラー: {str(e)}", error_detail)
+        error_detail = f"例外発生: {str(e)}\n{traceback.format_exc()}"
+        return (False, f"スプレッドシート保存エラー", error_detail)
 
 # ページ設定
 st.set_page_config(
